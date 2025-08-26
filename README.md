@@ -53,6 +53,11 @@ src/
    uv sync
    ```
 
+   For LLM functionality, install optional dependencies:
+   ```bash
+   uv sync --extra llm
+   ```
+
 3. **Set up environment variables**:
    ```bash
    cp .env.example .env
@@ -73,7 +78,7 @@ src/
 
 1. **Install development dependencies**:
    ```bash
-   uv sync --dev
+   uv sync --dev --extra llm
    ```
 
 2. **Run tests**:
@@ -85,7 +90,7 @@ src/
    ```bash
    uv run black src/
    uv run isort src/
-   uv run flake8 src/
+   uvx ruff check
    uv run mypy src/
    ```
 
@@ -123,6 +128,14 @@ MODEL_TEMPERATURE=0.1
 - **File System**: Working directory, allowed paths
 - **Logging**: Level, file output, structured format
 - **Monitoring**: Health check intervals, metrics collection
+
+### LLM Dependencies
+
+The project includes optional LLM client dependencies:
+- `openai>=1.0.0` - For OpenAI API integration
+- `anthropic>=0.7.0` - For Anthropic Claude API integration
+
+Install with: `uv sync --extra llm`
 
 See `.env.example` for complete configuration options.
 
@@ -312,6 +325,10 @@ With coverage:
 uv run pytest tests/ --cov=src --cov-report=html
 ```
 
+Current test coverage: **86%** (286 tests passing)
+
+Note: Some tests require LLM dependencies (`openai`, `anthropic`). Install with `--extra llm` to run the full test suite.
+
 ## Troubleshooting
 
 ### Common Issues
@@ -362,7 +379,7 @@ Run all checks:
 ```bash
 uv run black src/ tests/
 uv run isort src/ tests/
-uv run flake8 src/ tests/
+uvx ruff check
 uv run mypy src/
 ```
 

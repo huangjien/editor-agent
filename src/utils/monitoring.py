@@ -252,77 +252,94 @@ class SystemMonitor:
   @staticmethod
   def get_system_info() -> Dict[str, Any]:
     """Get current system information."""
+    result = {"timestamp": datetime.now(UTC).isoformat()}
+
+    # CPU information
     try:
-      # CPU information
       cpu_percent = psutil.cpu_percent(interval=1)
       cpu_count = psutil.cpu_count()
       cpu_freq = psutil.cpu_freq()
+      result["cpu"] = {
+        "percent": cpu_percent,
+        "count": cpu_count,
+        "frequency": {
+          "current": cpu_freq.current if cpu_freq else None,
+          "min": cpu_freq.min if cpu_freq else None,
+          "max": cpu_freq.max if cpu_freq else None,
+        }
+        if cpu_freq
+        else None,
+      }
+    except Exception as e:
+      logger.error(f"Failed to get CPU info: {str(e)}")
+      return {"timestamp": result["timestamp"], "error": f"CPU error: {str(e)}"}
 
-      # Memory information
+    # Memory information
+    try:
       memory = psutil.virtual_memory()
       swap = psutil.swap_memory()
+      result["memory"] = {
+        "total": memory.total,
+        "available": memory.available,
+        "percent": memory.percent,
+        "used": memory.used,
+        "free": memory.free,
+      }
+      result["swap"] = {
+        "total": swap.total,
+        "used": swap.used,
+        "free": swap.free,
+        "percent": swap.percent,
+      }
+    except Exception as e:
+      logger.error(f"Failed to get memory info: {str(e)}")
+      return {"timestamp": result["timestamp"], "error": f"Memory error: {str(e)}"}
 
-      # Disk information
+    # Disk information
+    try:
       disk = psutil.disk_usage("/")
+      result["disk"] = {
+        "total": disk.total,
+        "used": disk.used,
+        "free": disk.free,
+        "percent": (disk.used / disk.total) * 100,
+      }
+    except Exception as e:
+      logger.error(f"Failed to get disk info: {str(e)}")
+      return {"timestamp": result["timestamp"], "error": f"Disk error: {str(e)}"}
 
-      # Network information
+    # Network information
+    try:
       network = psutil.net_io_counters()
+      result["network"] = {
+        "bytes_sent": network.bytes_sent,
+        "bytes_recv": network.bytes_recv,
+        "packets_sent": network.packets_sent,
+        "packets_recv": network.packets_recv,
+      }
+    except Exception as e:
+      error_msg = str(e) if str(e) else (e.args[0] if e.args else "Unknown error")
+      logger.error(f"Failed to get network info: {error_msg}")
+      return {"timestamp": result["timestamp"], "error": f"Network error: {error_msg}"}
 
-      # Process information
+    # Process information
+    try:
       process = psutil.Process()
       process_memory = process.memory_info()
-
-      return {
-        "cpu": {
-          "percent": cpu_percent,
-          "count": cpu_count,
-          "frequency": {
-            "current": cpu_freq.current if cpu_freq else None,
-            "min": cpu_freq.min if cpu_freq else None,
-            "max": cpu_freq.max if cpu_freq else None,
-          }
-          if cpu_freq
-          else None,
-        },
-        "memory": {
-          "total": memory.total,
-          "available": memory.available,
-          "percent": memory.percent,
-          "used": memory.used,
-          "free": memory.free,
-        },
-        "swap": {
-          "total": swap.total,
-          "used": swap.used,
-          "free": swap.free,
-          "percent": swap.percent,
-        },
-        "disk": {
-          "total": disk.total,
-          "used": disk.used,
-          "free": disk.free,
-          "percent": (disk.used / disk.total) * 100,
-        },
-        "network": {
-          "bytes_sent": network.bytes_sent,
-          "bytes_recv": network.bytes_recv,
-          "packets_sent": network.packets_sent,
-          "packets_recv": network.packets_recv,
-        },
-        "process": {
-          "pid": process.pid,
-          "memory_rss": process_memory.rss,
-          "memory_vms": process_memory.vms,
-          "cpu_percent": process.cpu_percent(),
-          "num_threads": process.num_threads(),
-          "create_time": process.create_time(),
-        },
-        "timestamp": datetime.now(UTC).isoformat(),
+      result["process"] = {
+        "pid": process.pid,
+        "memory_rss": process_memory.rss,
+        "memory_vms": process_memory.vms,
+        "cpu_percent": process.cpu_percent(),
+        "num_threads": process.num_threads(),
+        "create_time": process.create_time(),
       }
-
     except Exception as e:
-      logger.error(f"Failed to get system info: {str(e)}", exc_info=True)
-      return {"error": str(e), "timestamp": datetime.now(UTC).isoformat()}
+      error_msg = str(e) if str(e) else (e.args[0] if e.args else "Unknown error")
+      logger.error(f"Failed to get process info: {error_msg}")
+      return {"timestamp": result["timestamp"], "error": f"Process error: {error_msg}"}
+
+    return result
 
 
 # Global instances

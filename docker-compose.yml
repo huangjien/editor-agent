@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  editor-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: editor-agent
+    ports:
+      - "8000:8000"
+    environment:
+      # Application settings
+      - APP_NAME=Editor Agent
+      - APP_VERSION=0.1.2
+      - ENVIRONMENT=production
+      - DEBUG=false
+      
+      # Server settings
+      - HOST=0.0.0.0
+      - PORT=8000
+      - WORKERS=1
+      
+      # API settings
+      - API_PREFIX=/api/v1
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+      
+      # Security settings
+      - SECRET_KEY=your-secret-key-change-in-production
+      - TRUSTED_HOSTS=localhost,127.0.0.1
+      
+      # Model settings (uncomment and set as needed)
+      # - OPENAI_API_KEY=your-openai-api-key
+      # - ANTHROPIC_API_KEY=your-anthropic-api-key
+      # - LANGCHAIN_API_KEY=your-langchain-api-key
+      # - LANGCHAIN_PROJECT=your-project-name
+      # - LANGCHAIN_TRACING_V2=true
+      
+      # Agent settings
+      - MAX_ITERATIONS=10
+      - MAX_EXECUTION_TIME=300
+      - ENABLE_MEMORY=true
+      
+      # File system settings
+      - WORKSPACE_DIR=/app/workspace
+      - MAX_FILE_SIZE=10485760
+      
+      # Logging settings
+      - LOG_LEVEL=INFO
+      - LOG_FILE=/app/logs/app.log
+      
+      # Monitoring settings
+      - ENABLE_METRICS=true
+      - HEALTH_CHECK_INTERVAL=30
+      
+      # Rate limiting
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_REQUESTS=100
+      - RATE_LIMIT_WINDOW=60
+    volumes:
+      - ./workspace:/app/workspace
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - editor-agent-network
+
+  # Optional: Add a reverse proxy (uncomment if needed)
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: editor-agent-nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - editor-agent
+  #   networks:
+  #     - editor-agent-network
+
+networks:
+  editor-agent-network:
+    driver: bridge
+
+volumes:
+  workspace:
+  logs:
