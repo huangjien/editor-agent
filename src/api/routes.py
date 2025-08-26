@@ -1,6 +1,5 @@
 """API routes for the editor agent."""
 
-from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any, List
 
@@ -10,7 +9,6 @@ from src.api.schemas import (
   ChatMessage,
   ChatRequest,
   ChatResponse,
-  HealthResponse,
 )
 from src.agent.service import AgentService
 from src.utils.exceptions import ValidationError
@@ -115,7 +113,7 @@ api_router.include_router(chat_router)
 async def api_health_check() -> Dict[str, Any]:
   """API health check endpoint."""
   from src.utils.monitoring import get_health_checker
-  
+
   health_checker = get_health_checker()
   return await health_checker.run_all_checks()
 

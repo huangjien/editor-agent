@@ -107,7 +107,9 @@ class TestChatRoutes:
   def test_get_chat_history(self, auth_client: TestClient):
     """Test getting chat history."""
     headers = {"X-API-Key": "test-api-key"}
-    response = auth_client.get("/api/v1/chat/sessions/test-session/history", headers=headers)
+    response = auth_client.get(
+      "/api/v1/chat/sessions/test-session/history", headers=headers
+    )
     assert response.status_code in [200, 404, 500]
 
   def test_clear_chat_session(self, auth_client: TestClient):

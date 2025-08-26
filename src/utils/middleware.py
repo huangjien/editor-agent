@@ -390,13 +390,10 @@ class HealthCheckMiddleware(BaseHTTPMiddleware):
     # Handle health check requests directly
     if request.url.path == "/health" and request.method == "GET":
       from src.utils.monitoring import get_health_checker
-      
+
       health_checker = get_health_checker()
       health_data = await health_checker.run_all_checks()
-      return JSONResponse(
-        status_code=200,
-        content=health_data
-      )
-    
+      return JSONResponse(status_code=200, content=health_data)
+
     # Let other requests pass through
     return await call_next(request)

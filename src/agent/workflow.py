@@ -162,7 +162,6 @@ class EditorAgentWorkflow:
         "error": str(e),
         "metadata": {"session_id": session_id, "error_type": type(e).__name__},
       }
-      
 
   async def stream(
     self,

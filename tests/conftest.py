@@ -102,7 +102,9 @@ def auth_client(test_settings_with_auth: Settings) -> Generator[TestClient, None
 
 
 @pytest_asyncio.fixture
-async def async_client(test_settings_with_auth: Settings) -> AsyncGenerator[AsyncClient, None]:
+async def async_client(
+  test_settings_with_auth: Settings,
+) -> AsyncGenerator[AsyncClient, None]:
   """Create an async test client for the FastAPI app."""
   from src.main import create_app
   from httpx import ASGITransport
@@ -111,9 +113,9 @@ async def async_client(test_settings_with_auth: Settings) -> AsyncGenerator[Asyn
   test_app = create_app(test_settings_with_auth)
 
   async with AsyncClient(
-    transport=ASGITransport(app=test_app), 
+    transport=ASGITransport(app=test_app),
     base_url="http://testserver",
-    headers={"host": "testserver"}
+    headers={"host": "testserver"},
   ) as ac:
     yield ac
 
@@ -174,11 +176,9 @@ def sample_files(temp_dir: Path) -> dict[str, Path]:
 def mock_agent_state():
   """Create a mock agent state for testing."""
   from src.agent.state import create_initial_agent_state
-  
+
   state = create_initial_agent_state(
-    session_id="test-session-123",
-    task="Test user input",
-    config={"max_steps": 50}
+    session_id="test-session-123", task="Test user input", config={"max_steps": 50}
   )
   # Add some test-specific fields that tests expect
   state["user_input"] = "Test user input"
@@ -188,7 +188,7 @@ def mock_agent_state():
   state["error"] = None
   state["is_complete"] = False
   state["processing_log"] = []
-  
+
   return state
 
 
@@ -196,13 +196,11 @@ def mock_agent_state():
 def mock_chat_state():
   """Create a mock chat state for testing."""
   from src.agent.state import create_chat_state
-  
+
   state = create_chat_state(
-    session_id="test-chat-123",
-    user_message="Test message",
-    context={}
+    session_id="test-chat-123", user_message="Test message", context={}
   )
   # Add test-specific field that tests expect
   state["current_message"] = "Test message"
-  
+
   return state

@@ -36,15 +36,9 @@ class Settings(BaseSettings):
   cors_allow_headers: List[str] = Field(default=["*"])
 
   # Security settings
-  secret_key: str = Field(
-    default="your-secret-key-change-in-production"
-  )
-  access_token_expire_minutes: int = Field(
-    default=30
-  )
-  trusted_hosts: List[str] = Field(
-    default=["localhost", "127.0.0.1"]
-  )
+  secret_key: str = Field(default="your-secret-key-change-in-production")
+  access_token_expire_minutes: int = Field(default=30)
+  trusted_hosts: List[str] = Field(default=["localhost", "127.0.0.1"])
 
   # LangGraph/LangChain settings
   openai_api_key: Optional[str] = Field(default=None)
@@ -106,9 +100,7 @@ class Settings(BaseSettings):
   rate_limit_enabled: bool = Field(default=True)
   rate_limit_requests: int = Field(default=100)
   rate_limit_window: int = Field(default=60)  # seconds
-  rate_limit_requests_per_minute: int = Field(
-    default=60
-  )
+  rate_limit_requests_per_minute: int = Field(default=60)
 
   # API Key authentication settings
   require_api_key: bool = Field(default=False)
@@ -237,7 +229,7 @@ class Settings(BaseSettings):
   model_config = {
     "env_file": ".env",
     "env_file_encoding": "utf-8",
-    "case_sensitive": False
+    "case_sensitive": False,
   }
 
 

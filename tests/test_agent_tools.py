@@ -1,7 +1,5 @@
 """Tests for agent tools."""
 
-import os
-
 import pytest
 
 from src.agent.tools import (
@@ -22,10 +20,7 @@ class TestBaseTool:
 
   def test_base_tool_creation(self):
     """Test creating a base tool."""
-    tool = BaseTool(
-      name="test_tool",
-      description="A test tool"
-    )
+    tool = BaseTool(name="test_tool", description="A test tool")
 
     assert tool.name == "test_tool"
     assert tool.description == "A test tool"
@@ -40,10 +35,7 @@ class TestBaseTool:
 
   def test_base_tool_to_schema(self):
     """Test converting base tool to schema."""
-    tool = BaseTool(
-      name="test_tool",
-      description="A test tool"
-    )
+    tool = BaseTool(name="test_tool", description="A test tool")
 
     schema = tool.get_schema()
 
@@ -143,7 +135,9 @@ class TestFileWriteTool:
     tool = FileWriteTool()
     new_content = "New content"
 
-    result = await tool.execute(file_path=str(sample_files["text"]), content=new_content)
+    result = await tool.execute(
+      file_path=str(sample_files["text"]), content=new_content
+    )
 
     assert result["success"] is True
     assert sample_files["text"].read_text() == new_content
@@ -171,7 +165,10 @@ class TestFileWriteTool:
 
     assert result["success"] is False
     assert (
-      "permission" in result["error"].lower() or "denied" in result["error"].lower() or "read-only" in result["error"].lower() or "not permitted" in result["error"].lower()
+      "permission" in result["error"].lower()
+      or "denied" in result["error"].lower()
+      or "read-only" in result["error"].lower()
+      or "not permitted" in result["error"].lower()
     )
 
 
@@ -295,8 +292,6 @@ class TestCommandExecuteTool:
     assert "timed out" in result["error"].lower()
 
 
-
-
 class TestSearchTool:
   """Test SearchTool functionality."""
 
@@ -325,10 +320,7 @@ class TestSearchTool:
     """Test searching by file content."""
     tool = SearchTool()
 
-    result = await tool.execute(
-      pattern="sample text file",
-      directory=str(temp_dir)
-    )
+    result = await tool.execute(pattern="sample text file", directory=str(temp_dir))
 
     assert result["success"] is True
     # Should find the sample.txt file
@@ -366,10 +358,7 @@ class TestSearchTool:
 
     tool = SearchTool()
 
-    result = await tool.execute(
-      pattern="test_file",
-      directory=str(temp_dir)
-    )
+    result = await tool.execute(pattern="test_file", directory=str(temp_dir))
 
     assert result["success"] is True
     assert len(result["matches"]) <= 5
@@ -470,8 +459,7 @@ class TestToolIntegration:
 
     # 4. Search for content in the file
     search_result = await execute_tool(
-      "search_files",
-      pattern="Test workflow", directory=str(temp_dir)
+      "search_files", pattern="Test workflow", directory=str(temp_dir)
     )
     assert search_result["success"] is True
     assert len(search_result["matches"]) > 0
@@ -483,7 +471,7 @@ class TestToolIntegration:
     command_result = await execute_tool(
       "execute_command",
       command=f"echo 'Command created file' > {temp_dir}/command_file.txt",
-      working_dir=str(temp_dir)
+      working_dir=str(temp_dir),
     )
     assert command_result["success"] is True
 

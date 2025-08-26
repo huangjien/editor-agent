@@ -10,7 +10,6 @@ from src.agent.workflow import (
   create_chat_workflow,
   get_llm_client,
 )
-from src.agent.state import AgentState, ChatState
 
 
 class TestLLMClient:
@@ -120,13 +119,10 @@ class TestAgentWorkflow:
       ]
 
       # Execute workflow using run method
-      result = await workflow.run(
-        session_id="test-session",
-        user_input="Hello, world!"
-      )
+      result = await workflow.run(session_id="test-session", user_input="Hello, world!")
 
       # Check final state
-      assert result["success"] == True
+      assert result["success"]
       assert result["response"] is not None
       assert result["metadata"]["session_id"] == "test-session"
 
@@ -140,13 +136,10 @@ class TestAgentWorkflow:
       mock_llm.side_effect = Exception("LLM error")
 
       # Execute workflow using run method
-      result = await workflow.run(
-        session_id="test-session",
-        user_input="Test error"
-      )
+      result = await workflow.run(session_id="test-session", user_input="Test error")
 
       # Check error handling
-      assert result["success"] == False
+      assert not result["success"]
       assert result["error"] is not None
 
   @pytest.mark.asyncio
@@ -164,10 +157,7 @@ class TestAgentWorkflow:
       mock_client.messages.create.return_value = response
 
       # Execute workflow using chat method
-      result = await workflow.chat(
-        session_id="test-session",
-        message="Hello!"
-      )
+      result = await workflow.chat(session_id="test-session", message="Hello!")
 
       # Check final state
       assert result["message"] is not None
@@ -201,12 +191,12 @@ class TestAgentWorkflow:
       result = await workflow.run(
         session_id="test-session",
         user_input="Test message",
-        context={"user_id": "test-user"}
+        context={"user_id": "test-user"},
       )
 
       # Check that session information is preserved
       assert result["metadata"]["session_id"] == "test-session"
-      assert result["success"] == True
+      assert result["success"]
       assert result["response"] is not None
 
   @pytest.mark.asyncio
@@ -251,13 +241,11 @@ class TestAgentWorkflow:
         }
 
         result = await workflow.run(
-          session_id="test-session",
-          user_input="List current directory",
-          context={}
+          session_id="test-session", user_input="List current directory", context={}
         )
 
         # Check that workflow executed successfully
-        assert result["success"] == True
+        assert result["success"]
         assert "response" in result
 
   @pytest.mark.asyncio
@@ -270,13 +258,11 @@ class TestAgentWorkflow:
       mock_llm.return_value.messages.create.side_effect = Exception("LLM Error")
 
       result = await workflow.run(
-        session_id="test-session",
-        user_input="Test message",
-        context={}
+        session_id="test-session", user_input="Test message", context={}
       )
 
       # Check that error was handled gracefully
-      assert result["success"] == False
+      assert not result["success"]
       assert result["error"] is not None
       assert "error" in str(result["error"]).lower()
 
@@ -285,36 +271,36 @@ class TestAgentWorkflow:
     """Test workflow conditional routing logic."""
     from src.agent.state import create_initial_agent_state
     from src.agent.nodes import should_continue
-    
+
     create_agent_workflow()
 
     # Test different routing scenarios based on state conditions
     # should_continue returns: "continue", "respond", "error", "end"
-    
+
     # Test normal continuation (no error, steps remaining)
     state = create_initial_agent_state("test-session")
     state["metadata"]["execution_plan"] = {
       "steps": ["step1", "step2", "step3"],
-      "current_step_index": 1  # Still has steps remaining
+      "current_step_index": 1,  # Still has steps remaining
     }
     assert should_continue(state) == "continue"
-    
+
     # Test error condition
     state = create_initial_agent_state("test-session")
     state["error_message"] = "Some error occurred"
     assert should_continue(state) == "error"
-    
+
     # Test step limit reached
     state = create_initial_agent_state("test-session")
     state["step_count"] = 50  # Reached max_steps
     state["max_steps"] = 50
     assert should_continue(state) == "end"
-    
+
     # Test plan complete (should respond)
     state = create_initial_agent_state("test-session")
     state["metadata"]["execution_plan"] = {
       "steps": ["step1", "step2"],
-      "current_step_index": 2  # All steps completed
+      "current_step_index": 2,  # All steps completed
     }
     assert should_continue(state) == "respond"
 
@@ -341,9 +327,7 @@ class TestWorkflowIntegration:
       mock_client.messages.create.side_effect = responses
 
       agent_result = await agent_workflow.run(
-        session_id="test-session",
-        user_input="Hello!",
-        context={}
+        session_id="test-session", user_input="Hello!", context={}
       )
 
       # Reset mock for chat workflow
@@ -354,11 +338,11 @@ class TestWorkflowIntegration:
       chat_result = await chat_workflow.chat(
         session_id="test-session",
         message="Follow up question",
-        context={"previous_response": agent_result["response"]}
+        context={"previous_response": agent_result["response"]},
       )
 
       # Check integration
-      assert agent_result["success"] == True
+      assert agent_result["success"]
       assert chat_result["message"] is not None
       assert agent_result["response"] is not None
       assert chat_result["message"] is not None
@@ -410,11 +394,11 @@ class TestWorkflowIntegration:
         result = await workflow.run(
           session_id="test-session",
           user_input="Create a file and then read it",
-          context={}
+          context={},
         )
 
         # Check that workflow executed successfully
-        assert result["success"] == True
+        assert result["success"]
         assert "response" in result
 
   @pytest.mark.asyncio
@@ -435,13 +419,11 @@ class TestWorkflowIntegration:
       mock_client.messages.create.side_effect = responses
 
       result = await workflow.run(
-        session_id="test-session",
-        user_input="Quick test",
-        context={}
+        session_id="test-session", user_input="Quick test", context={}
       )
 
       # Check that workflow executed successfully
-      assert result["success"] == True
+      assert result["success"]
       assert result["response"] is not None
       assert result["metadata"]["session_id"] == "test-session"
 
@@ -459,9 +441,9 @@ class TestWorkflowIntegration:
       result = await workflow.run(
         session_id="test-session",
         user_input="",  # Empty input to test validation
-        context={}
+        context={},
       )
 
       # Should complete with error handling
-      assert result["success"] == False
+      assert not result["success"]
       assert result["error"] is not None

@@ -69,8 +69,17 @@ def create_app(settings_override=None):
   app.add_middleware(SecurityHeadersMiddleware)
   app.add_middleware(RequestSizeLimitMiddleware, max_size=settings.max_file_size)
   app.add_middleware(HealthCheckMiddleware)
-  app.add_middleware(RateLimitMiddleware, requests_per_minute=settings.rate_limit_requests_per_minute if hasattr(settings, 'rate_limit_requests_per_minute') else None)
-  app.add_middleware(APIKeyAuthMiddleware, require_api_key=settings.require_api_key, api_keys=settings.api_keys)
+  app.add_middleware(
+    RateLimitMiddleware,
+    requests_per_minute=settings.rate_limit_requests_per_minute
+    if hasattr(settings, "rate_limit_requests_per_minute")
+    else None,
+  )
+  app.add_middleware(
+    APIKeyAuthMiddleware,
+    require_api_key=settings.require_api_key,
+    api_keys=settings.api_keys,
+  )
   app.add_middleware(RequestLoggingMiddleware)
   app.add_middleware(RequestIDMiddleware)
 

@@ -16,7 +16,6 @@ from src.agent.nodes import (
   generate_chat_response,
   _execute_step,
 )
-from src.agent.state import AgentState, ChatState
 
 
 class TestProcessUserInput:
@@ -132,7 +131,7 @@ class TestExecuteAction:
     state = mock_agent_state
     state["metadata"]["execution_plan"] = {
       "steps": ["test_step"],
-      "current_step_index": 0
+      "current_step_index": 0,
     }
 
     with patch("src.agent.nodes._execute_step") as mock_execute:
@@ -142,7 +141,7 @@ class TestExecuteAction:
 
     assert result["current_step"] == "executing"
     assert len(result["intermediate_results"]) > 0
-    assert result["intermediate_results"][0]["success"] == True
+    assert result["intermediate_results"][0]["success"]
 
   @pytest.mark.asyncio
   async def test_execute_action_no_plan(self, mock_agent_state):
@@ -161,7 +160,7 @@ class TestExecuteAction:
     state = mock_agent_state
     state["metadata"]["execution_plan"] = {
       "steps": ["failing_step"],
-      "current_step_index": 0
+      "current_step_index": 0,
     }
 
     with patch("src.agent.nodes._execute_step") as mock_execute:
@@ -179,7 +178,7 @@ class TestExecuteAction:
     state = mock_agent_state
     state["metadata"]["execution_plan"] = {
       "steps": ["step1", "step2"],
-      "current_step_index": 0
+      "current_step_index": 0,
     }
 
     with patch("src.agent.nodes._execute_step") as mock_execute:
@@ -200,7 +199,9 @@ class TestGenerateResponse:
     """Test basic response generation."""
     state = mock_agent_state
     state["user_input"] = "Hello"
-    state["intermediate_results"] = [{"step": 1, "result": "File created", "success": True}]
+    state["intermediate_results"] = [
+      {"step": 1, "result": "File created", "success": True}
+    ]
 
     result = await generate_response(state)
 
@@ -229,7 +230,7 @@ class TestGenerateResponse:
     state["user_input"] = "Hello"
     state["intermediate_results"] = [
       {"step": 1, "result": "Success", "success": True},
-      {"step": 2, "result": "Error occurred", "success": False}
+      {"step": 2, "result": "Error occurred", "success": False},
     ]
 
     result = await generate_response(state)
@@ -318,7 +319,10 @@ class TestShouldContinue:
   def test_should_continue_planning(self, mock_agent_state):
     """Test continuation check for planning state."""
     state = mock_agent_state
-    state["metadata"]["execution_plan"] = {"steps": ["step1", "step2"], "current_step_index": 0}
+    state["metadata"]["execution_plan"] = {
+      "steps": ["step1", "step2"],
+      "current_step_index": 0,
+    }
 
     result = should_continue(state)
 
@@ -327,7 +331,10 @@ class TestShouldContinue:
   def test_should_continue_execution(self, mock_agent_state):
     """Test continuation check for execution state."""
     state = mock_agent_state
-    state["metadata"]["execution_plan"] = {"steps": ["step1", "step2"], "current_step_index": 1}
+    state["metadata"]["execution_plan"] = {
+      "steps": ["step1", "step2"],
+      "current_step_index": 1,
+    }
 
     result = should_continue(state)
 
@@ -370,9 +377,9 @@ class TestChatNodes:
     """Test basic chat message processing."""
     state = mock_chat_state
     state["user_message"] = "Hello, how are you?"
-    
+
     result = await process_chat_message(state)
-    
+
     assert "user_message" in result
     assert result["user_message"] == "Hello, how are you?"
     assert len(result["messages"]) >= 2  # System message + user message
@@ -382,9 +389,9 @@ class TestChatNodes:
     """Test chat message processing with no message."""
     state = mock_chat_state
     state["user_message"] = ""
-    
+
     result = await process_chat_message(state)
-    
+
     assert "user_message" in result
     assert result["user_message"] == ""
 
@@ -393,9 +400,9 @@ class TestChatNodes:
     """Test basic chat response generation."""
     state = mock_chat_state
     state["user_message"] = "Hello, how are you?"
-    
+
     result = await generate_chat_response(state)
-    
+
     assert "agent_response" in result
     assert "Hello, how are you?" in result["agent_response"]
     assert "metadata" in result
@@ -406,9 +413,9 @@ class TestChatNodes:
     """Test chat response generation with empty user message."""
     state = mock_chat_state
     state["user_message"] = ""
-    
+
     result = await generate_chat_response(state)
-    
+
     assert "agent_response" in result
     assert result["agent_response"] is not None
 

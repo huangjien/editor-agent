@@ -57,19 +57,20 @@ async def plan_task(state: AgentState) -> AgentState:
   try:
     # Try to get LLM client for planning (this will trigger test failures when mocked)
     from src.agent.workflow import get_llm_client
+
     llm_client = get_llm_client()
     logger.info(f"LLM client obtained for planning: {type(llm_client)}")
-    
+
     # Make a mock API call that can be intercepted in tests
-    if hasattr(llm_client, 'messages'):
+    if hasattr(llm_client, "messages"):
       # This is for testing - the actual call would be more complex
       response = llm_client.messages.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": f"Plan task: {task}"}],
-        max_tokens=100
+        max_tokens=100,
       )
       logger.info(f"LLM planning response received: {response}")
-    
+
     # Simple task planning logic (could be enhanced with LLM in the future)
     plan_steps = []
 
@@ -288,19 +289,20 @@ async def generate_chat_response(state: ChatState) -> ChatState:
   try:
     # Try to get LLM client for response generation
     from src.agent.workflow import get_llm_client
+
     llm_client = get_llm_client()
     logger.info(f"LLM client obtained for chat response: {type(llm_client)}")
-    
+
     # Make a mock API call that can be intercepted in tests
-    if hasattr(llm_client, 'messages'):
+    if hasattr(llm_client, "messages"):
       # This is for testing - the actual call would be more complex
       response = llm_client.messages.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": user_message}],
-        max_tokens=150
+        max_tokens=150,
       )
       logger.info(f"LLM chat response received: {response}")
-    
+
     # Simple response generation (could be enhanced with actual LLM call)
     response = f"I understand you said: '{user_message}'. How can I help you with that?"
 

@@ -5,7 +5,7 @@ from datetime import datetime, UTC
 from typing import Any, Dict, List, Optional
 
 from src.agent.workflow import create_agent_workflow, create_chat_workflow
-from src.agent.state import AgentState, ChatState
+from src.agent.state import ChatState
 from src.config.settings import get_settings
 from src.utils.logging import get_logger
 from src.utils.exceptions import EditorAgentException, ValidationError
@@ -53,9 +53,6 @@ class AgentService:
       raise ValidationError("Task cannot be empty")
 
     try:
-      # Create initial agent state
-      state = AgentState(task=task.strip(), context=context or {}, config=config or {})
-
       self.logger.info(f"Executing task: {task[:100]}...")
 
       # Execute the workflow
@@ -64,15 +61,12 @@ class AgentService:
 
       # Generate a session ID for this task
       session_id = str(uuid.uuid4())
-      
+
       result = await self.agent_workflow.run(
-        session_id=session_id,
-        user_input=task,
-        context=context,
-        config=config
+        session_id=session_id, user_input=task, context=context, config=config
       )
 
-      self.logger.info(f"Task completed successfully")
+      self.logger.info("Task completed successfully")
 
       return {
         "task_id": session_id,
@@ -139,15 +133,15 @@ class AgentService:
       # Get or create chat session
       if session_id not in self.chat_sessions:
         from src.agent.state import create_chat_state
+
         self.chat_sessions[session_id] = create_chat_state(
-          session_id=session_id, 
-          user_message=message.strip(),
-          context=context or {}
+          session_id=session_id, user_message=message.strip(), context=context or {}
         )
       else:
         # Update existing session with new message
         chat_state = self.chat_sessions[session_id]
         from langchain_core.messages import HumanMessage
+
         chat_state["messages"].append(HumanMessage(content=message.strip()))
         chat_state["user_message"] = message.strip()
 
@@ -160,15 +154,14 @@ class AgentService:
         raise EditorAgentException("Chat workflow not initialized")
 
       result = await self.chat_workflow.chat(
-        session_id=session_id,
-        message=message.strip(),
-        context=context
+        session_id=session_id, message=message.strip(), context=context
       )
 
       # Update the session with the result
       if "message" in result:
         chat_state["agent_response"] = result["message"]
         from langchain_core.messages import AIMessage
+
         chat_state["messages"].append(AIMessage(content=result["message"]))
 
       return {

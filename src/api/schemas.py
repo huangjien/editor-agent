@@ -76,9 +76,7 @@ class ErrorResponse(BaseModel):
   error: str = Field(..., description="Error message")
   detail: Optional[str] = Field(default=None, description="Error details")
   code: Optional[str] = Field(default=None, description="Error code")
-  timestamp: datetime = Field(
-    default_factory=utc_now, description="Error timestamp"
-  )
+  timestamp: datetime = Field(default_factory=utc_now, description="Error timestamp")
 
 
 class AgentConfig(BaseModel):

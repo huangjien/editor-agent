@@ -165,21 +165,21 @@ class TestTaskState:
   def test_task_state_with_steps(self):
     """Test task state with predefined steps."""
     state = create_task_state("task-123", "Complex task")
-    
+
     # Manually add steps to test the functionality
     steps = ["analyze", "plan", "execute", "verify"]
-    state["steps"] = [{'name': step, 'status': 'pending'} for step in steps]
+    state["steps"] = [{"name": step, "status": "pending"} for step in steps]
 
     assert len(state["steps"]) == 4
-    assert state["steps"][0]['name'] == "analyze"
+    assert state["steps"][0]["name"] == "analyze"
 
   def test_task_state_progression(self):
     """Test task state progression through steps."""
     state = create_task_state("task-123", "Multi-step task")
-    
+
     # Add steps manually
     steps = ["step1", "step2", "step3"]
-    state["steps"] = [{'name': step, 'status': 'pending'} for step in steps]
+    state["steps"] = [{"name": step, "status": "pending"} for step in steps]
 
     # Progress through steps
     state["status"] = "running"

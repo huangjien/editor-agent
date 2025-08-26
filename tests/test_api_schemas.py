@@ -113,9 +113,7 @@ class TestChatResponse:
       ChatResponse(session_id="session-123")  # Missing message
 
     with pytest.raises(ValidationError):
-      ChatResponse(
-        message="Hello"
-      )  # Missing session_id
+      ChatResponse(message="Hello")  # Missing session_id
 
 
 class TestAgentRequest:
@@ -131,9 +129,7 @@ class TestAgentRequest:
   def test_agent_request_with_config(self):
     """Test agent request with configuration."""
     config = {"model_name": "gpt-4", "temperature": 0.7, "timeout": 300}
-    request = AgentRequest(
-      task="Complex task", config=config
-    )
+    request = AgentRequest(task="Complex task", config=config)
     assert request.config == config
 
   def test_empty_task_allowed(self):
@@ -174,9 +170,7 @@ class TestAgentResponse:
   def test_invalid_status(self):
     """Test agent response with missing required fields."""
     with pytest.raises(ValidationError):
-      AgentResponse(
-        result={"output": "Task completed"}
-      )
+      AgentResponse(result={"output": "Task completed"})
 
 
 class TestAgentConfig:
@@ -219,7 +213,10 @@ class TestHealthResponse:
   def test_valid_health_response(self):
     """Test creating a valid health response."""
     response = HealthResponse(
-      status="healthy", version="1.0.0", service="editor-agent", timestamp=datetime.now()
+      status="healthy",
+      version="1.0.0",
+      service="editor-agent",
+      timestamp=datetime.now(),
     )
     assert response.status == "healthy"
     assert response.version == "1.0.0"
@@ -324,11 +321,7 @@ class TestAgentStatus:
   def test_invalid_progress(self):
     """Test agent status with invalid active_sessions."""
     with pytest.raises(ValidationError):
-      AgentStatus(
-        status="running", active_sessions=-1, total_requests=100
-      )
+      AgentStatus(status="running", active_sessions=-1, total_requests=100)
 
     with pytest.raises(ValidationError):
-      AgentStatus(
-        status="running", active_sessions=5, total_requests=-10
-      )
+      AgentStatus(status="running", active_sessions=5, total_requests=-10)
