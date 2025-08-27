@@ -391,9 +391,21 @@ class HealthCheckMiddleware(BaseHTTPMiddleware):
     if request.url.path == "/health" and request.method == "GET":
       from src.utils.monitoring import get_health_checker
 
-      health_checker = get_health_checker()
-      health_data = await health_checker.run_all_checks()
-      return JSONResponse(status_code=200, content=health_data)
+      try:
+        health_checker = get_health_checker()
+        health_data = await health_checker.run_all_checks()
+        return JSONResponse(status_code=200, content=health_data)
+      except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        return JSONResponse(
+          status_code=500,
+          content={
+            "error": {
+              "message": "Health check failed",
+              "details": str(e)
+            }
+          }
+        )
 
     # Let other requests pass through
     return await call_next(request)

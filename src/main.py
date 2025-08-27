@@ -118,8 +118,21 @@ def create_app(settings_override=None):
   @app.get("/health")
   async def health_check():
     """Health check endpoint."""
-    health_checker = get_health_checker()
-    return await health_checker.run_all_checks()
+    try:
+      health_checker = get_health_checker()
+      return await health_checker.run_all_checks()
+    except Exception as e:
+      from fastapi.responses import JSONResponse
+      return JSONResponse(
+        status_code=500,
+        content={
+          "error": {
+            "code": "HEALTH_CHECK_FAILED",
+            "message": f"Health check failed: {str(e)}",
+            "details": {"exception_type": type(e).__name__}
+          }
+        }
+      )
 
   @app.get("/metrics")
   async def metrics():
