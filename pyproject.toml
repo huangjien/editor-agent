@@ -7,7 +7,7 @@ packages = ["src"]
 
 [project]
 name = "editor-agent"
-version = "0.1.2"
+version = "0.1.3"
 description = "AI Agent project using LangGraph and FastAPI"
 readme = "README.md"
 requires-python = ">=3.11"
