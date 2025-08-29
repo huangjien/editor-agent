@@ -1,6 +1,6 @@
 # Multi-stage build for optimized Python FastAPI application
 # Builder stage for dependencies
-FROM python:3.11-slim AS builder
+FROM python:3.13-slim AS builder
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -27,7 +27,7 @@ RUN pip install --upgrade pip setuptools wheel && \
     pip install .
 
 # Stage 2: Runtime image
-FROM python:3.11-slim as runtime
+FROM python:3.13-slim as runtime
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
