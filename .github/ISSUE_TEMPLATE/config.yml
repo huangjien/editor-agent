@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or Discussion
+    url: https://github.com/yourusername/editor-agent/discussions
+    about: Ask questions and discuss ideas with the community
+  - name: Security Issue
+    url: https://github.com/yourusername/editor-agent/security/advisories/new
+    about: Report a security vulnerability privately
+  - name: Documentation
+    url: https://github.com/yourusername/editor-agent/wiki
+    about: Check the documentation and wiki for help

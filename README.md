@@ -13,6 +13,154 @@ An AI-powered code editing agent built with FastAPI and LangGraph, designed to a
 
 ## Architecture
 
+### System Overview
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        CLI["CLI Client"]
+        WEB["Web Interface"]
+        API_CLIENT["API Client"]
+    end
+    
+    subgraph "API Gateway"
+        MIDDLEWARE["Middleware Layer"]
+        RATE_LIMIT["Rate Limiting"]
+        AUTH["Authentication"]
+        CORS["CORS Handler"]
+    end
+    
+    subgraph "FastAPI Application"
+        ROUTES["API Routes"]
+        SCHEMAS["Pydantic Schemas"]
+        VALIDATION["Request Validation"]
+    end
+    
+    subgraph "Agent Core"
+        WORKFLOW["LangGraph Workflow"]
+        NODES["Processing Nodes"]
+        STATE["State Management"]
+        TOOLS["Agent Tools"]
+    end
+    
+    subgraph "Tool Ecosystem"
+        FILE_TOOLS["File Operations"]
+        CMD_TOOLS["Command Execution"]
+        CODE_TOOLS["Code Analysis"]
+        SEARCH_TOOLS["Search & Browse"]
+    end
+    
+    subgraph "External Services"
+        LLM["LLM Providers"]
+        FS["File System"]
+        SHELL["System Shell"]
+    end
+    
+    subgraph "Infrastructure"
+        LOGGING["Structured Logging"]
+        MONITORING["Health Checks"]
+        METRICS["Performance Metrics"]
+        CONFIG["Configuration"]
+    end
+    
+    %% Client connections
+    CLI --> MIDDLEWARE
+    WEB --> MIDDLEWARE
+    API_CLIENT --> MIDDLEWARE
+    
+    %% Middleware flow
+    MIDDLEWARE --> RATE_LIMIT
+    RATE_LIMIT --> AUTH
+    AUTH --> CORS
+    CORS --> ROUTES
+    
+    %% API layer
+    ROUTES --> SCHEMAS
+    SCHEMAS --> VALIDATION
+    VALIDATION --> WORKFLOW
+    
+    %% Agent workflow
+    WORKFLOW --> NODES
+    NODES --> STATE
+    NODES --> TOOLS
+    
+    %% Tool connections
+    TOOLS --> FILE_TOOLS
+    TOOLS --> CMD_TOOLS
+    TOOLS --> CODE_TOOLS
+    TOOLS --> SEARCH_TOOLS
+    
+    %% External service connections
+    NODES --> LLM
+    FILE_TOOLS --> FS
+    CMD_TOOLS --> SHELL
+    
+    %% Infrastructure connections
+    ROUTES -.-> LOGGING
+    WORKFLOW -.-> LOGGING
+    MIDDLEWARE -.-> MONITORING
+    ROUTES -.-> METRICS
+    WORKFLOW --> CONFIG
+    
+    %% Styling
+    classDef clientLayer fill:#e1f5fe
+    classDef apiLayer fill:#f3e5f5
+    classDef agentLayer fill:#e8f5e8
+    classDef toolLayer fill:#fff3e0
+    classDef externalLayer fill:#fce4ec
+    classDef infraLayer fill:#f1f8e9
+    
+    class CLI,WEB,API_CLIENT clientLayer
+    class MIDDLEWARE,RATE_LIMIT,AUTH,CORS,ROUTES,SCHEMAS,VALIDATION apiLayer
+    class WORKFLOW,NODES,STATE,TOOLS agentLayer
+    class FILE_TOOLS,CMD_TOOLS,CODE_TOOLS,SEARCH_TOOLS toolLayer
+    class LLM,FS,SHELL externalLayer
+    class LOGGING,MONITORING,METRICS,CONFIG infraLayer
+```
+
+### Request Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API as FastAPI
+    participant Agent as LangGraph Agent
+    participant Tools as Agent Tools
+    participant LLM as LLM Provider
+    participant FS as File System
+    
+    Client->>API: POST /api/v1/chat/message
+    API->>API: Validate request
+    API->>Agent: Initialize workflow
+    
+    Agent->>Agent: Load state
+    Agent->>LLM: Generate response plan
+    LLM-->>Agent: Task breakdown
+    
+    loop For each task
+        Agent->>Tools: Execute tool
+        alt File Operation
+            Tools->>FS: Read/Write files
+            FS-->>Tools: File content/status
+        else Command Execution
+            Tools->>FS: Execute command
+            FS-->>Tools: Command output
+        else Code Analysis
+            Tools->>Tools: Analyze code
+            Tools-->>Agent: Analysis results
+        end
+        Tools-->>Agent: Tool results
+        Agent->>LLM: Process results
+        LLM-->>Agent: Next action
+    end
+    
+    Agent->>Agent: Update state
+    Agent-->>API: Final response
+    API-->>Client: JSON response
+```
+
+### Project Structure
+
 ```
 src/
 ├── agent/          # LangGraph agent implementation
@@ -114,9 +262,11 @@ PORT=8000
 # AI Model (choose one)
 OPENAI_API_KEY="your-openai-key"
 # ANTHROPIC_API_KEY="your-anthropic-key"
+# OLLAMA_BASE_URL="http://localhost:11434"
+# OLLAMA_MODEL="llama2"
 
 # Model Configuration
-MODEL_PROVIDER="openai"
+MODEL_PROVIDER="openai"  # Options: openai, anthropic, ollama
 MODEL_NAME="gpt-4"
 MODEL_TEMPERATURE=0.1
 ```
@@ -134,8 +284,97 @@ MODEL_TEMPERATURE=0.1
 The project includes optional LLM client dependencies:
 - `openai>=1.0.0` - For OpenAI API integration
 - `anthropic>=0.7.0` - For Anthropic Claude API integration
+- `ollama>=0.1.0` - For Ollama local model integration
 
 Install with: `uv sync --extra llm`
+
+### Supported LLM Providers
+
+#### OpenAI
+Set `MODEL_PROVIDER=openai` and provide your `OPENAI_API_KEY`.
+
+#### Anthropic Claude
+Set `MODEL_PROVIDER=anthropic` and provide your `ANTHROPIC_API_KEY`.
+
+#### Ollama (Local Models)
+Set `MODEL_PROVIDER=ollama` and configure:
+- `OLLAMA_BASE_URL` - Ollama server URL (default: http://localhost:11434)
+- `OLLAMA_MODEL` - Model name (e.g., llama2, codellama, mistral)
+
+Ensure Ollama is running locally with your desired model pulled:
+```bash
+# Install and start Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
+ollama serve
+
+# Pull a model
+ollama pull llama2
+```
+
+### Database (Supabase)
+
+The application supports Supabase for data persistence. Configure with:
+
+```env
+# Supabase Configuration
+SUPABASE_URL="https://your-project.supabase.co"
+SUPABASE_KEY="your-anon-key"
+SUPABASE_SERVICE_KEY="your-service-role-key"  # Optional, for admin operations
+```
+
+#### Setting up Supabase
+
+1. **Create a Supabase project**:
+   - Go to [supabase.com](https://supabase.com)
+   - Create a new project
+   - Note your project URL and anon key
+
+2. **Run database migrations**:
+   ```bash
+   # Install Supabase CLI
+   npm install -g supabase
+   
+   # Initialize Supabase in your project
+   supabase init
+   
+   # Link to your project
+   supabase link --project-ref your-project-ref
+   
+   # Run migrations
+   supabase db push
+   ```
+
+3. **Apply the schema**:
+   Execute the SQL in `migrations/001_initial_schema.sql` in your Supabase SQL editor or use:
+   ```bash
+   supabase db reset
+   ```
+
+#### Database Features
+
+The Supabase integration provides:
+
+- **User Profiles**: Store user preferences and metadata
+- **Chat Sessions**: Persist conversation history
+- **Chat Messages**: Store individual messages with metadata
+- **Agent Tasks**: Track agent task execution
+- **Agent Executions**: Log detailed execution steps
+- **File Operations**: Audit trail for file changes
+- **Row Level Security**: User data isolation
+- **Real-time subscriptions**: Live updates (future feature)
+
+#### Database Models
+
+Key database models include:
+
+- `UserProfile`: User account information and preferences
+- `ChatSession`: Conversation sessions with context
+- `ChatMessage`: Individual messages with role and metadata
+- `AgentTask`: High-level tasks assigned to the agent
+- `AgentExecution`: Detailed execution steps and logs
+- `FileOperation`: File system operation audit trail
+
+See `src/database/models.py` for complete model definitions.
 
 See `.env.example` for complete configuration options.
 

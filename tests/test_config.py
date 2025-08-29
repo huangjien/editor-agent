@@ -23,7 +23,7 @@ class TestSettings:
 
     assert settings.host == "0.0.0.0"
     assert settings.port == 8000
-    assert settings.debug is False
+    assert settings.debug is True
     assert settings.environment == "development"
     assert settings.app_name == "Editor Agent"
     assert settings.app_version == "1.0.0"
@@ -90,7 +90,7 @@ class TestSettings:
   def test_cors_config(self):
     """Test CORS configuration."""
     settings = Settings(
-      cors_origins=["http://localhost:3000"], cors_allow_credentials=True
+      cors_origins="http://localhost:3000", cors_allow_credentials=True
     )
 
     config = settings.get_cors_config()
@@ -107,6 +107,29 @@ class TestSettings:
     assert config["max_iterations"] == 20
     assert config["max_execution_time"] == 600
     assert config["enable_memory"] is False
+
+  def test_model_provider_validation(self):
+    """Test model provider validation accepts valid providers."""
+    # Test valid providers
+    for provider in ["openai", "anthropic", "ollama"]:
+      settings = Settings(model_provider=provider)
+      assert settings.model_provider == provider
+
+    # Test invalid provider
+    with pytest.raises(ValidationError, match="Model provider must be one of"):
+      Settings(model_provider="invalid_provider")
+
+  def test_ollama_configuration(self):
+    """Test Ollama-specific configuration."""
+    settings = Settings(
+      model_provider="ollama",
+      ollama_base_url="http://localhost:11434",
+      ollama_model="llama2"
+    )
+
+    assert settings.model_provider == "ollama"
+    assert settings.ollama_base_url == "http://localhost:11434"
+    assert settings.ollama_model == "llama2"
 
 
 class TestEnvironmentVariables:

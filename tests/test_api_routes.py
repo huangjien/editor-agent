@@ -3,10 +3,8 @@ import json
 from unittest.mock import Mock, patch, AsyncMock
 from fastapi.testclient import TestClient
 from fastapi import HTTPException
-from pydantic import ValidationError
 
 from src.main import create_app
-from src.api.schemas import ChatMessage, ChatRequest, ChatResponse, AgentRequest
 from src.agent.service import AgentService
 
 
@@ -17,7 +15,7 @@ def app():
     
     # Override settings to include testserver in trusted hosts
     test_settings = Settings(
-        trusted_hosts=["localhost", "127.0.0.1", "testserver"]
+        trusted_hosts="localhost,127.0.0.1,testserver"
     )
     return create_app(settings_override=test_settings)
 
@@ -365,7 +363,7 @@ class TestDependencyInjection:
         # TestClient doesn't properly handle dependency injection exceptions
         # The exception is raised during dependency resolution, not caught by exception handlers
         with pytest.raises(Exception, match="Service creation failed"):
-            response = client.post(
+            client.post(
                 "/api/v1/agent/execute",
                 json={"task": "Test task", "context": {}}
             )

@@ -1,0 +1,186 @@
+# Configuration for automatic labeling of issues based on content
+
+# Bug-related keywords
+bug:
+  - 'bug'
+  - 'error'
+  - 'issue'
+  - 'problem'
+  - 'broken'
+  - 'crash'
+  - 'fail'
+  - 'exception'
+  - 'traceback'
+  - 'stack trace'
+  - 'not working'
+  - "doesn't work"
+  - 'unexpected'
+
+# Enhancement/Feature requests
+enhancement:
+  - 'feature'
+  - 'enhancement'
+  - 'improvement'
+  - 'add'
+  - 'implement'
+  - 'support'
+  - 'would like'
+  - 'request'
+  - 'suggestion'
+  - 'propose'
+
+# Documentation related
+documentation:
+  - 'documentation'
+  - 'docs'
+  - 'readme'
+  - 'guide'
+  - 'tutorial'
+  - 'example'
+  - 'help'
+  - 'how to'
+  - 'unclear'
+  - 'confusing'
+
+# Questions
+question:
+  - 'question'
+  - 'how'
+  - 'why'
+  - 'what'
+  - 'when'
+  - 'where'
+  - 'help'
+  - 'support'
+  - 'clarification'
+
+# Performance related
+performance:
+  - 'performance'
+  - 'slow'
+  - 'fast'
+  - 'speed'
+  - 'optimization'
+  - 'memory'
+  - 'cpu'
+  - 'latency'
+  - 'throughput'
+  - 'benchmark'
+
+# Security related
+security:
+  - 'security'
+  - 'vulnerability'
+  - 'exploit'
+  - 'attack'
+  - 'authentication'
+  - 'authorization'
+  - 'permission'
+  - 'credential'
+  - 'token'
+  - 'password'
+
+# API related
+api:
+  - 'api'
+  - 'endpoint'
+  - 'route'
+  - 'request'
+  - 'response'
+  - 'http'
+  - 'rest'
+  - 'fastapi'
+
+# Testing related
+testing:
+  - 'test'
+  - 'testing'
+  - 'pytest'
+  - 'coverage'
+  - 'mock'
+  - 'unit test'
+  - 'integration test'
+
+# Configuration related
+configuration:
+  - 'config'
+  - 'configuration'
+  - 'settings'
+  - 'environment'
+  - 'env'
+  - 'variable'
+
+# LLM/AI related
+llm:
+  - 'llm'
+  - 'openai'
+  - 'anthropic'
+  - 'ollama'
+  - 'langchain'
+  - 'langgraph'
+  - 'ai'
+  - 'model'
+  - 'prompt'
+
+# Docker related
+docker:
+  - 'docker'
+  - 'container'
+  - 'dockerfile'
+  - 'compose'
+  - 'image'
+
+# Dependencies
+dependencies:
+  - 'dependency'
+  - 'dependencies'
+  - 'package'
+  - 'library'
+  - 'version'
+  - 'upgrade'
+  - 'update'
+  - 'install'
+
+# Priority labels based on urgency keywords
+priority/high:
+  - 'urgent'
+  - 'critical'
+  - 'blocking'
+  - 'production'
+  - 'security'
+  - 'data loss'
+  - 'crash'
+
+priority/medium:
+  - 'important'
+  - 'needed'
+  - 'should'
+  - 'regression'
+
+priority/low:
+  - 'nice to have'
+  - 'minor'
+  - 'cosmetic'
+  - 'cleanup'
+  - 'refactor'
+
+# Difficulty estimation
+difficulty/easy:
+  - 'simple'
+  - 'easy'
+  - 'trivial'
+  - 'quick'
+  - 'small'
+
+difficulty/medium:
+  - 'moderate'
+  - 'medium'
+  - 'some work'
+
+difficulty/hard:
+  - 'complex'
+  - 'difficult'
+  - 'hard'
+  - 'challenging'
+  - 'major'
+  - 'significant'

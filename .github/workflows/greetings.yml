@@ -1,0 +1,58 @@
+name: Greetings
+
+on:
+  issues:
+    types: [opened]
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  greeting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Greet new contributors
+        uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-message: |
+            👋 Welcome to the Editor Agent project! Thank you for opening your first issue.
+            
+            To help us assist you better, please make sure you've:
+            - [ ] Searched existing issues to avoid duplicates
+            - [ ] Provided clear steps to reproduce (for bugs)
+            - [ ] Included relevant system information
+            - [ ] Added appropriate labels if possible
+            
+            Our maintainers will review your issue soon. In the meantime, feel free to:
+            - Check out our [documentation](https://github.com/yourusername/editor-agent/wiki)
+            - Join our [discussions](https://github.com/yourusername/editor-agent/discussions)
+            - Review our [contributing guidelines](https://github.com/yourusername/editor-agent/blob/main/CONTRIBUTING.md)
+            
+            Thanks for contributing! 🚀
+          pr-message: |
+            🎉 Thank you for your first pull request to the Editor Agent project!
+            
+            Before we can review your PR, please ensure:
+            - [ ] Your code follows our style guidelines (run `uv run ruff check` and `uv run black .`)
+            - [ ] All tests pass (`uv run pytest`)
+            - [ ] You've added tests for new functionality
+            - [ ] You've updated documentation if needed
+            - [ ] Your commits have clear, descriptive messages
+            - [ ] You've linked any related issues
+            
+            Our review process:
+            1. Automated checks will run (CI/CD)
+            2. A maintainer will review your code
+            3. We may request changes or ask questions
+            4. Once approved, we'll merge your contribution
+            
+            Thank you for contributing to make Editor Agent better! 🙌
+            
+            If you have questions, feel free to:
+            - Comment on this PR
+            - Join our [discussions](https://github.com/yourusername/editor-agent/discussions)
+            - Check our [contributing guide](https://github.com/yourusername/editor-agent/blob/main/CONTRIBUTING.md)

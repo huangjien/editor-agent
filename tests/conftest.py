@@ -44,12 +44,8 @@ def test_settings(temp_dir: Path) -> Settings:
     openai_api_key="test-openai-key",
     anthropic_api_key="test-anthropic-key",
     require_api_key=False,  # Disable API key auth for tests
-    api_keys=[],
-    trusted_hosts=[
-      "localhost",
-      "127.0.0.1",
-      "testserver",
-    ],  # Add testserver for TestClient
+    api_keys="",
+    trusted_hosts="localhost,127.0.0.1,testserver",  # Add testserver for TestClient
   )
 
 
@@ -68,12 +64,8 @@ def test_settings_with_auth(temp_dir: Path) -> Settings:
     openai_api_key="test-openai-key",
     anthropic_api_key="test-anthropic-key",
     require_api_key=True,  # Enable API key auth for auth tests
-    api_keys=["test-api-key"],
-    trusted_hosts=[
-      "localhost",
-      "127.0.0.1",
-      "testserver",
-    ],  # Add testserver for TestClient
+    api_keys="test-api-key",
+    trusted_hosts="localhost,127.0.0.1,testserver",  # Add testserver for TestClient
   )
 
 

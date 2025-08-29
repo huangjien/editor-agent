@@ -404,13 +404,26 @@ async def system_health_check() -> Dict[str, Any]:
 
 
 async def database_health_check() -> Dict[str, Any]:
-  """Database health check (placeholder for future database integration)."""
-  # This is a placeholder - implement actual database health check when database is added
-  return {
-    "healthy": True,
-    "message": "No database configured",
-    "details": {"status": "not_applicable"},
-  }
+  """Check database health."""
+  from ..database.client import get_supabase_client
+  
+  client = get_supabase_client()
+  if not client:
+    return {
+      "healthy": True,
+      "message": "No database configured",
+      "details": {"status": "not_applicable"},
+    }
+  
+  try:
+    return client.health_check()
+  except Exception as e:
+    logger.error(f"Database health check failed: {str(e)}")
+    return {
+      "healthy": False,
+      "message": f"Database health check failed: {str(e)}",
+      "details": {"error": str(e)},
+    }
 
 
 # Register default health checks

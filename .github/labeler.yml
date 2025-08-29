@@ -1,0 +1,126 @@
+# Configuration for automatic labeling of pull requests based on file paths
+
+# Core application code
+'area/core':
+  - 'src/agent/**/*'
+  - 'src/main.py'
+
+# API related changes
+'area/api':
+  - 'src/api/**/*'
+
+# Configuration changes
+'area/config':
+  - 'src/config/**/*'
+  - 'pyproject.toml'
+  - '*.toml'
+  - '*.ini'
+  - '.env*'
+
+# Utility functions
+'area/utils':
+  - 'src/utils/**/*'
+
+# Testing
+'area/testing':
+  - 'tests/**/*'
+  - 'pytest.ini'
+  - 'conftest.py'
+
+# Documentation
+'area/docs':
+  - '*.md'
+  - 'docs/**/*'
+  - '*.rst'
+
+# CI/CD and automation
+'area/ci-cd':
+  - '.github/**/*'
+  - 'Dockerfile*'
+  - 'docker-compose*.yml'
+  - '.dockerignore'
+
+# Dependencies
+'area/dependencies':
+  - 'pyproject.toml'
+  - 'requirements*.txt'
+  - 'uv.lock'
+  - 'poetry.lock'
+  - 'Pipfile*'
+
+# Security
+'area/security':
+  - '**/*security*'
+  - '**/*auth*'
+  - '**/*token*'
+  - '**/*credential*'
+
+# Performance
+'area/performance':
+  - '**/*perf*'
+  - '**/*benchmark*'
+  - '**/*optimization*'
+  - '**/*cache*'
+
+# Database/Storage
+'area/storage':
+  - '**/*db*'
+  - '**/*database*'
+  - '**/*storage*'
+  - '**/*persistence*'
+
+# Monitoring and logging
+'area/monitoring':
+  - 'src/utils/logging.py'
+  - 'src/utils/monitoring.py'
+  - '**/*log*'
+  - '**/*metric*'
+  - '**/*monitor*'
+
+# LLM and AI related
+'area/llm':
+  - '**/*llm*'
+  - '**/*openai*'
+  - '**/*anthropic*'
+  - '**/*ollama*'
+  - '**/*langchain*'
+  - '**/*langgraph*'
+
+# Type definitions
+'type/feature':
+  - any: ['src/**/*']
+    all: ['!tests/**/*', '!docs/**/*', '!*.md']
+
+# Breaking changes (based on file patterns that often indicate breaking changes)
+'type/breaking':
+  - 'src/api/schemas.py'
+  - 'src/config/settings.py'
+  - 'pyproject.toml'
+
+# Bug fixes (when tests are the primary changes)
+'type/bugfix':
+  - any: ['tests/**/*']
+    all: ['!src/**/*']
+
+# Refactoring
+'type/refactor':
+  - any: ['src/**/*']
+    all: ['!tests/test_*.py']
+
+# Priority labels based on critical files
+'priority/high':
+  - 'src/main.py'
+  - 'src/agent/workflow.py'
+  - 'src/config/settings.py'
+  - 'Dockerfile'
+  - '.github/workflows/**/*'
+
+'priority/medium':
+  - 'src/api/**/*'
+  - 'src/agent/**/*'
+  - 'tests/**/*'
+
+'priority/low':
+  - '*.md'
+  - 'docs/**/*'
+  - '.github/ISSUE_TEMPLATE/**/*'

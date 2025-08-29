@@ -1,5 +1,10 @@
 """Tests for agent tools."""
 
+import shutil
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
+
 import pytest
 
 from src.agent.tools import (
@@ -12,6 +17,7 @@ from src.agent.tools import (
   get_available_tools,
   get_all_tool_schemas,
   execute_tool,
+  get_tool_schema,
 )
 
 
@@ -498,3 +504,437 @@ class TestToolIntegration:
 
     # Error should be descriptive
     assert len(result["error"]) > 0
+
+
+class TestDirectoryListToolEdgeCases:
+  """Test DirectoryListTool edge cases and error conditions."""
+
+  @pytest.mark.asyncio
+  async def test_directory_list_recursive_with_subdirectories(self, temp_dir):
+    """Test recursive directory listing with nested subdirectories."""
+    # Create nested directory structure
+    (temp_dir / "level1").mkdir()
+    (temp_dir / "level1" / "level2").mkdir()
+    (temp_dir / "level1" / "level2" / "file.txt").write_text("nested file")
+    (temp_dir / "level1" / "file1.txt").write_text("level1 file")
+    (temp_dir / "root_file.txt").write_text("root file")
+
+    tool = DirectoryListTool()
+    result = await tool.execute(directory_path=str(temp_dir), recursive=True)
+
+    assert result["success"] is True
+    assert result["count"] >= 5  # At least 2 dirs + 3 files
+    
+    # Check that nested items are included
+    file_paths = [item["path"] for item in result["items"]]
+    assert any("level2" in path for path in file_paths)
+    assert any("file.txt" in path for path in file_paths)
+
+  @pytest.mark.asyncio
+  async def test_directory_list_with_file_sizes(self, temp_dir):
+    """Test that file sizes are correctly reported."""
+    test_content = "This is test content for size calculation"
+    test_file = temp_dir / "size_test.txt"
+    test_file.write_text(test_content)
+    
+    tool = DirectoryListTool()
+    result = await tool.execute(directory_path=str(temp_dir))
+    
+    assert result["success"] is True
+    file_item = next((item for item in result["items"] if item["name"] == "size_test.txt"), None)
+    assert file_item is not None
+    assert file_item["size"] == len(test_content.encode('utf-8'))
+    assert file_item["type"] == "file"
+
+
+class TestCommandExecuteToolSecurity:
+  """Test CommandExecuteTool security features and dangerous command detection."""
+
+  @pytest.mark.asyncio
+  async def test_dangerous_command_rm_rf(self):
+    """Test that rm -rf commands are blocked."""
+    tool = CommandExecuteTool()
+    result = await tool.execute(command="rm -rf /some/path")
+    
+    assert result["success"] is False
+    assert "dangerous operations" in result["error"].lower()
+
+  @pytest.mark.asyncio
+  async def test_dangerous_command_sudo(self):
+    """Test that sudo commands are blocked."""
+    tool = CommandExecuteTool()
+    result = await tool.execute(command="sudo rm file.txt")
+    
+    assert result["success"] is False
+    assert "dangerous operations" in result["error"].lower()
+
+  @pytest.mark.asyncio
+  async def test_dangerous_command_chmod_777(self):
+    """Test that chmod 777 commands are blocked."""
+    tool = CommandExecuteTool()
+    result = await tool.execute(command="chmod 777 /etc/passwd")
+    
+    assert result["success"] is False
+    assert "dangerous operations" in result["error"].lower()
+
+  @pytest.mark.asyncio
+  async def test_dangerous_command_mkfs(self):
+    """Test that mkfs commands are blocked."""
+    tool = CommandExecuteTool()
+    result = await tool.execute(command="mkfs.ext4 /dev/sda1")
+    
+    assert result["success"] is False
+    assert "dangerous operations" in result["error"].lower()
+
+  @pytest.mark.asyncio
+  async def test_dangerous_command_dd(self):
+    """Test that dd if= commands are blocked."""
+    tool = CommandExecuteTool()
+    result = await tool.execute(command="dd if=/dev/zero of=/dev/sda")
+    
+    assert result["success"] is False
+    assert "dangerous operations" in result["error"].lower()
+
+  @pytest.mark.asyncio
+  async def test_safe_command_allowed(self):
+    """Test that safe commands are allowed."""
+    tool = CommandExecuteTool()
+    result = await tool.execute(command="echo 'safe command'")
+    
+    assert result["success"] is True
+    assert "safe command" in result["stdout"]
+
+
+class TestSearchToolErrorHandling:
+  """Test SearchTool error handling for various edge cases."""
+
+  @pytest.mark.asyncio
+  async def test_search_with_binary_files(self, temp_dir):
+    """Test search behavior with binary files that cause UnicodeDecodeError."""
+    # Create a binary file
+    binary_file = temp_dir / "binary.bin"
+    binary_file.write_bytes(b'\x00\x01\x02\x03\xff\xfe\xfd')
+    
+    # Create a text file for comparison
+    text_file = temp_dir / "text.txt"
+    text_file.write_text("searchable text content")
+    
+    tool = SearchTool()
+    result = await tool.execute(pattern="text", directory=str(temp_dir))
+    
+    # Should succeed and find the text file, skip the binary file
+    assert result["success"] is True
+    assert len(result["matches"]) >= 1
+    assert any("text.txt" in match["file"] for match in result["matches"])
+
+  @pytest.mark.asyncio
+  async def test_search_empty_pattern(self, temp_dir, sample_files):
+    """Test search with empty pattern."""
+    tool = SearchTool()
+    result = await tool.execute(pattern="", directory=str(temp_dir))
+    
+    # Should handle empty pattern gracefully
+    assert result["success"] is True
+    # Empty pattern should match every line
+    assert len(result["matches"]) > 0
+
+  @pytest.mark.asyncio
+  async def test_search_case_sensitivity(self, temp_dir):
+    """Test search case sensitivity."""
+    test_file = temp_dir / "case_test.txt"
+    test_file.write_text("This is a TEST file with Mixed Case")
+    
+    tool = SearchTool()
+    
+    # Search for lowercase should find uppercase
+    result = await tool.execute(pattern="test", directory=str(temp_dir))
+    assert result["success"] is True
+    assert len(result["matches"]) > 0
+    
+    # Search for uppercase should find lowercase
+    result = await tool.execute(pattern="MIXED", directory=str(temp_dir))
+    assert result["success"] is True
+    assert len(result["matches"]) > 0
+
+
+class TestUtilityFunctions:
+  """Test utility functions for tool management."""
+
+  def test_get_available_tools_no_filter(self):
+    """Test getting all available tools without filter."""
+    tools = get_available_tools()
+    expected_tools = ["read_file", "write_file", "list_directory", "execute_command", "search_files"]
+    
+    assert isinstance(tools, list)
+    for tool in expected_tools:
+      assert tool in tools
+
+  def test_get_available_tools_read_task(self):
+    """Test getting tools for read-related tasks."""
+    tools = get_available_tools(task_type="read")
+    assert "read_file" in tools
+    assert "list_directory" in tools
+    assert "search_files" in tools
+
+  def test_get_available_tools_write_task(self):
+    """Test getting tools for write-related tasks."""
+    tools = get_available_tools(task_type="write")
+    assert "write_file" in tools
+    assert "read_file" in tools
+    assert "list_directory" in tools
+
+  def test_get_available_tools_search_task(self):
+    """Test getting tools for search-related tasks."""
+    tools = get_available_tools(task_type="search")
+    assert "search_files" in tools
+    assert "list_directory" in tools
+
+  def test_get_available_tools_execute_task(self):
+    """Test getting tools for execute-related tasks."""
+    tools = get_available_tools(task_type="execute")
+    assert "execute_command" in tools
+    assert "read_file" in tools
+
+  def test_get_available_tools_unknown_task(self):
+    """Test getting tools for unknown task type."""
+    tools = get_available_tools(task_type="unknown_task_type")
+    # Should return all tools for unknown task types
+    expected_tools = ["read_file", "write_file", "list_directory", "execute_command", "search_files"]
+    for tool in expected_tools:
+      assert tool in tools
+
+  def test_get_tool_schema_valid_tool(self):
+    """Test getting schema for a valid tool."""
+    schema = get_tool_schema("read_file")
+    assert schema is not None
+    assert "name" in schema
+    assert "description" in schema
+    assert "parameters" in schema
+
+  def test_get_tool_schema_invalid_tool(self):
+    """Test getting schema for an invalid tool."""
+    schema = get_tool_schema("nonexistent_tool")
+    assert schema is None
+
+
+class TestBoundaryConditions:
+  """Test boundary conditions and edge cases."""
+
+  @pytest.mark.asyncio
+  async def test_file_read_very_long_path(self, temp_dir):
+    """Test reading file with very long path."""
+    # Create nested directory structure with long path
+    long_path = temp_dir
+    for i in range(10):
+      long_path = long_path / f"very_long_directory_name_{i}"
+      long_path.mkdir(exist_ok=True)
+    
+    test_file = long_path / "test_file.txt"
+    test_content = "Content in deeply nested file"
+    test_file.write_text(test_content)
+    
+    tool = FileReadTool()
+    result = await tool.execute(file_path=str(test_file))
+    
+    assert result["success"] is True
+    assert result["content"] == test_content
+
+  @pytest.mark.asyncio
+  async def test_file_write_empty_content(self, temp_dir):
+    """Test writing empty content to file."""
+    test_file = temp_dir / "empty_file.txt"
+    
+    tool = FileWriteTool()
+    result = await tool.execute(file_path=str(test_file), content="")
+    
+    assert result["success"] is True
+    assert test_file.exists()
+    assert test_file.read_text() == ""
+
+  @pytest.mark.asyncio
+  async def test_search_very_long_pattern(self, temp_dir):
+    """Test search with very long pattern."""
+    test_file = temp_dir / "pattern_test.txt"
+    long_pattern = "a" * 1000
+    test_content = f"Start {long_pattern} End"
+    test_file.write_text(test_content)
+    
+    tool = SearchTool()
+    result = await tool.execute(pattern=long_pattern, directory=str(temp_dir))
+    
+    assert result["success"] is True
+    assert len(result["matches"]) == 1
+    assert long_pattern in result["matches"][0]["line_content"]
+
+  @pytest.mark.asyncio
+  async def test_command_execute_empty_command(self):
+    """Test executing empty command."""
+    tool = CommandExecuteTool()
+    result = await tool.execute(command="")
+    
+    assert result["success"] is True
+    assert result["return_code"] == 0
+    assert result["stdout"] == ""
+    assert result["stderr"] == ""
+
+  @pytest.mark.asyncio
+  async def test_directory_list_empty_directory(self, temp_dir):
+    """Test listing empty directory."""
+    empty_dir = temp_dir / "empty"
+    empty_dir.mkdir()
+    
+    tool = DirectoryListTool()
+    result = await tool.execute(directory_path=str(empty_dir))
+    
+    assert result["success"] is True
+    assert result["count"] == 0
+    assert len(result["items"]) == 0
+
+
+class TestPerformanceScenarios:
+  """Test performance-related scenarios."""
+
+  def setup_method(self):
+    self.temp_dir = tempfile.mkdtemp()
+    self.test_dir = Path(self.temp_dir)
+    self.file_read_tool = FileReadTool()
+    self.file_write_tool = FileWriteTool()
+    self.directory_list_tool = DirectoryListTool()
+    self.search_tool = SearchTool()
+
+  def teardown_method(self):
+    shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+  @pytest.mark.asyncio
+  async def test_directory_list_many_files(self, temp_dir):
+    """Test listing directory with many files."""
+    # Create 100 files
+    for i in range(100):
+      (temp_dir / f"file_{i:03d}.txt").write_text(f"Content {i}")
+    
+    tool = DirectoryListTool()
+    result = await tool.execute(directory_path=str(temp_dir))
+    
+    assert result["success"] is True
+    assert result["count"] == 100
+    assert len(result["items"]) == 100
+
+  @pytest.mark.asyncio
+  async def test_search_many_files(self, temp_dir):
+    """Test searching across many files."""
+    # Create 50 files with searchable content
+    for i in range(50):
+      content = f"File {i} contains searchable content"
+      (temp_dir / f"search_file_{i}.txt").write_text(content)
+    
+    tool = SearchTool()
+    result = await tool.execute(pattern="searchable", directory=str(temp_dir))
+    
+    assert result["success"] is True
+    assert len(result["matches"]) == 50
+
+  @pytest.mark.asyncio
+  async def test_search_large_file(self, temp_dir):
+    """Test searching in a large file."""
+    # Create a large file with repeated content
+    large_content = "\n".join([f"Line {i} with searchable text" for i in range(1000)])
+    large_file = temp_dir / "large_file.txt"
+    large_file.write_text(large_content)
+    
+    tool = SearchTool()
+    result = await tool.execute(pattern="searchable", directory=str(temp_dir))
+    
+    assert result["success"] is True
+    assert len(result["matches"]) == 1000  # Should find all 1000 lines
+
+  @pytest.mark.asyncio
+  async def test_file_write_large_content(self, temp_dir):
+    """Test writing large content to file."""
+    large_content = "Large content line\n" * 10000
+    test_file = temp_dir / "large_content.txt"
+    
+    tool = FileWriteTool()
+    result = await tool.execute(file_path=str(test_file), content=large_content)
+    
+    assert result["success"] is True
+    assert test_file.exists()
+    
+    # Verify content was written correctly
+    tool_read = FileReadTool()
+    read_result = await tool_read.execute(file_path=str(test_file))
+    assert read_result["success"] is True
+    assert read_result["content"] == large_content
+
+
+class TestExceptionCoverage:
+  """Test exception handling paths for complete coverage."""
+
+  def setup_method(self):
+    self.temp_dir = tempfile.mkdtemp()
+    self.test_dir = Path(self.temp_dir)
+    self.directory_list_tool = DirectoryListTool()
+    self.command_tool = CommandExecuteTool()
+    self.search_tool = SearchTool()
+
+  def teardown_method(self):
+    shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+  @pytest.mark.asyncio
+  async def test_directory_list_general_exception(self):
+    """Test DirectoryListTool general exception handling."""
+    with patch('pathlib.Path.exists', side_effect=Exception("Unexpected error")):
+      result = await self.directory_list_tool.execute(
+        directory_path=str(self.test_dir)
+      )
+      assert result["success"] is False
+      assert "error" in result
+      assert "Unexpected error" in result["error"]
+
+  @pytest.mark.asyncio
+  async def test_command_execute_general_exception(self):
+    """Test CommandExecuteTool general exception handling."""
+    with patch('subprocess.run', side_effect=Exception("System error")):
+      result = await self.command_tool.execute(command="echo test")
+      assert result["success"] is False
+      assert "error" in result
+      assert "System error" in result["error"]
+
+  @pytest.mark.asyncio
+  async def test_search_tool_general_exception(self):
+    """Test SearchTool general exception handling."""
+    with patch('pathlib.Path.exists', side_effect=Exception("Path error")):
+      result = await self.search_tool.execute(
+        pattern="test", directory=str(self.test_dir)
+      )
+      assert result["success"] is False
+      assert "error" in result
+      assert "Path error" in result["error"]
+
+  @pytest.mark.asyncio
+  async def test_search_tool_unicode_decode_error(self):
+    """Test SearchTool handling of UnicodeDecodeError."""
+    # Create a binary file that will cause UnicodeDecodeError
+    binary_file = self.test_dir / "binary.py"
+    binary_file.write_bytes(b'\x80\x81\x82\x83')  # Invalid UTF-8
+    
+    result = await self.search_tool.execute(
+      pattern="test", directory=str(self.test_dir)
+    )
+    # Should succeed but skip the binary file
+    assert result["success"] is True
+    assert result["total_matches"] == 0
+
+  @pytest.mark.asyncio
+  async def test_search_tool_permission_error(self):
+    """Test SearchTool handling of PermissionError."""
+    # Create a file and simulate permission error
+    test_file = self.test_dir / "restricted.py"
+    test_file.write_text("test content")
+    
+    with patch('builtins.open', side_effect=PermissionError("Access denied")):
+      result = await self.search_tool.execute(
+        pattern="test", directory=str(self.test_dir)
+      )
+      # Should succeed but skip files with permission errors
+      assert result["success"] is True
+      assert result["total_matches"] == 0

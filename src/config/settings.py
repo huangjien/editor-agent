@@ -26,23 +26,25 @@ class Settings(BaseSettings):
 
   # API settings
   api_prefix: str = Field(default="/api/v1")
-  cors_origins: List[str] = Field(
-    default=["http://localhost:3000", "http://localhost:8080"]
+  cors_origins: str = Field(
+    default="http://localhost:3000,http://localhost:8080"
   )
   cors_allow_credentials: bool = Field(default=True)
-  cors_allow_methods: List[str] = Field(
-    default=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  cors_allow_methods: str = Field(
+    default="GET,POST,PUT,DELETE,OPTIONS"
   )
-  cors_allow_headers: List[str] = Field(default=["*"])
+  cors_allow_headers: str = Field(default="*")
 
   # Security settings
   secret_key: str = Field(default="your-secret-key-change-in-production")
   access_token_expire_minutes: int = Field(default=30)
-  trusted_hosts: List[str] = Field(default=["localhost", "127.0.0.1"])
+  trusted_hosts: str = Field(default="localhost,127.0.0.1")
 
   # LangGraph/LangChain settings
   openai_api_key: Optional[str] = Field(default=None)
   anthropic_api_key: Optional[str] = Field(default=None)
+  ollama_base_url: str = Field(default="http://localhost:11434", description="Ollama base URL")
+  ollama_model: str = Field(default="llama2", description="Ollama model name")
   langchain_api_key: Optional[str] = Field(default=None)
   langchain_project: Optional[str] = Field(default=None)
   langchain_tracing_v2: bool = Field(default=False)
@@ -63,19 +65,8 @@ class Settings(BaseSettings):
   # File system settings
   workspace_dir: str = Field(default="./workspace")
   max_file_size: int = Field(default=10 * 1024 * 1024)  # 10MB
-  allowed_file_extensions: List[str] = Field(
-    default=[
-      ".py",
-      ".js",
-      ".ts",
-      ".html",
-      ".css",
-      ".json",
-      ".yaml",
-      ".yml",
-      ".md",
-      ".txt",
-    ]
+  allowed_file_extensions: str = Field(
+    default=".py,.js,.ts,.html,.css,.json,.yaml,.yml,.md,.txt"
   )
 
   # Logging settings
@@ -87,9 +78,12 @@ class Settings(BaseSettings):
   log_rotation: str = Field(default="1 day")
   log_retention: str = Field(default="30 days")
 
-  # Database settings (for future use)
-  database_url: Optional[str] = Field(default=None)
-  redis_url: Optional[str] = Field(default=None)
+  # Database settings - Supabase
+  supabase_url: Optional[str] = Field(default=None, description="Supabase project URL")
+  supabase_key: Optional[str] = Field(default=None, description="Supabase anon/service role key")
+  supabase_service_key: Optional[str] = Field(default=None, description="Supabase service role key for admin operations")
+  database_url: Optional[str] = Field(default=None, description="Direct database URL (alternative to Supabase)")
+  redis_url: Optional[str] = Field(default=None, description="Redis URL for caching")
 
   # Monitoring settings
   enable_metrics: bool = Field(default=False)
@@ -104,52 +98,52 @@ class Settings(BaseSettings):
 
   # API Key authentication settings
   require_api_key: bool = Field(default=False)
-  api_keys: List[str] = Field(default=[])
+  api_keys: str = Field(default="")
 
   # Request Size Limit
   max_request_size: int = Field(default=10485760)  # 10MB
 
-  @field_validator("cors_origins", mode="before")
+  @field_validator("cors_origins", mode="after")
   @classmethod
   def parse_cors_origins(cls, v):
     if isinstance(v, str):
-      return [origin.strip() for origin in v.split(",")]
+      return [origin.strip() for origin in v.split(",") if origin.strip()]
     return v
 
-  @field_validator("cors_allow_methods", mode="before")
+  @field_validator("cors_allow_methods", mode="after")
   @classmethod
   def parse_cors_methods(cls, v):
     if isinstance(v, str):
-      return [method.strip() for method in v.split(",")]
+      return [method.strip() for method in v.split(",") if method.strip()]
     return v
 
-  @field_validator("cors_allow_headers", mode="before")
+  @field_validator("cors_allow_headers", mode="after")
   @classmethod
   def parse_cors_headers(cls, v):
     if isinstance(v, str):
-      return [header.strip() for header in v.split(",")]
+      return [header.strip() for header in v.split(",") if header.strip()]
     return v
 
-  @field_validator("trusted_hosts", mode="before")
+  @field_validator("trusted_hosts", mode="after")
   @classmethod
   def parse_trusted_hosts(cls, v):
     if isinstance(v, str):
-      return [host.strip() for host in v.split(",")]
+      return [host.strip() for host in v.split(",") if host.strip()]
     return v
 
-  @field_validator("allowed_file_extensions", mode="before")
+  @field_validator("allowed_file_extensions", mode="after")
   @classmethod
   def parse_file_extensions(cls, v):
     if isinstance(v, str):
       return [ext.strip() for ext in v.split(",") if ext.strip()]
     return v
 
-  @field_validator("api_keys", mode="before")
+  @field_validator("api_keys", mode="after")
   @classmethod
   def parse_api_keys(cls, v):
-    if isinstance(v, str):
+    if isinstance(v, str) and v.strip():
       return [key.strip() for key in v.split(",") if key.strip()]
-    return v
+    return []
 
   @field_validator("log_level")
   @classmethod
@@ -173,6 +167,14 @@ class Settings(BaseSettings):
     if not 0.0 <= v <= 2.0:
       raise ValueError("Model temperature must be between 0.0 and 2.0")
     return v
+
+  @field_validator("model_provider")
+  @classmethod
+  def validate_model_provider(cls, v):
+    valid_providers = ["openai", "anthropic", "ollama"]
+    if v.lower() not in valid_providers:
+      raise ValueError(f"Model provider must be one of: {valid_providers}")
+    return v.lower()
 
   @field_validator("workspace_dir")
   @classmethod

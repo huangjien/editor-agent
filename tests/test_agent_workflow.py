@@ -109,6 +109,47 @@ class TestLLMClient:
         with pytest.raises(ImportError, match="Anthropic package not installed"):
           get_llm_client()
 
+  def test_get_llm_client_ollama(self):
+    """Test Ollama client initialization."""
+    with patch("src.agent.workflow.get_settings") as mock_settings:
+      mock_settings.return_value.model_provider = "ollama"
+      mock_settings.return_value.ollama_base_url = "http://localhost:11434"
+
+      with patch("ollama.Client") as mock_ollama:
+        mock_client = MagicMock()
+        mock_ollama.return_value = mock_client
+
+        client = get_llm_client()
+
+        mock_ollama.assert_called_once_with(host="http://localhost:11434")
+        assert client == mock_client
+
+  def test_get_llm_client_ollama_default_url(self):
+    """Test Ollama client initialization with default URL."""
+    with patch("src.agent.workflow.get_settings") as mock_settings:
+      mock_settings.return_value.model_provider = "ollama"
+      # Simulate getattr returning default when ollama_base_url is not set
+      del mock_settings.return_value.ollama_base_url
+
+      with patch("ollama.Client") as mock_ollama:
+        mock_client = MagicMock()
+        mock_ollama.return_value = mock_client
+
+        client = get_llm_client()
+
+        mock_ollama.assert_called_once_with(host="http://localhost:11434")
+        assert client == mock_client
+
+  def test_get_llm_client_ollama_import_error(self):
+    """Test error handling when Ollama package is not installed."""
+    with patch("src.agent.workflow.get_settings") as mock_settings:
+      mock_settings.return_value.model_provider = "ollama"
+      mock_settings.return_value.ollama_base_url = "http://localhost:11434"
+
+      with patch("builtins.__import__", side_effect=ImportError("No module named 'ollama'")):
+        with pytest.raises(ImportError, match="Ollama package not installed"):
+          get_llm_client()
+
 
 class TestAgentWorkflow:
   """Test agent workflow functionality."""

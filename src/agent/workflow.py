@@ -55,6 +55,18 @@ def get_llm_client():
         "Anthropic package not installed. Install with: pip install anthropic"
       )
 
+  elif provider == "ollama":
+    try:
+      import ollama
+
+      base_url = getattr(settings, "ollama_base_url", "http://localhost:11434")
+      # Ollama client doesn't require API key for local instances
+      return ollama.Client(host=base_url)
+    except ImportError:
+      raise ImportError(
+        "Ollama package not installed. Install with: pip install ollama"
+      )
+
   else:
     raise ValueError(f"Unsupported model provider: {provider}")
 

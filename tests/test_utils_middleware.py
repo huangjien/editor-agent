@@ -223,7 +223,7 @@ class TestAPIKeyAuthMiddleware:
     app = FastAPI()
     with patch("src.utils.middleware.settings") as mock_settings:
       mock_settings.require_api_key = True
-      mock_settings.api_keys = ["valid-key"]
+      mock_settings.api_keys = "valid-key"
       middleware = APIKeyAuthMiddleware(app, require_api_key=True)
 
       request = MagicMock(spec=Request)
@@ -248,7 +248,7 @@ class TestAPIKeyAuthMiddleware:
     app = FastAPI()
     with patch("src.utils.middleware.settings") as mock_settings:
       mock_settings.require_api_key = True
-      mock_settings.api_keys = ["valid-key"]
+      mock_settings.api_keys = "valid-key"
       middleware = APIKeyAuthMiddleware(app, require_api_key=True)
 
       request = MagicMock(spec=Request)
@@ -273,7 +273,7 @@ class TestAPIKeyAuthMiddleware:
     app = FastAPI()
     with patch("src.utils.middleware.settings") as mock_settings:
       mock_settings.require_api_key = True
-      mock_settings.api_keys = ["valid-key"]
+      mock_settings.api_keys = "valid-key"
       middleware = APIKeyAuthMiddleware(app, require_api_key=True)
 
       request = MagicMock(spec=Request)
@@ -611,7 +611,7 @@ class TestMiddlewareIntegration:
 
     with patch("src.utils.middleware.settings") as mock_settings:
       mock_settings.require_api_key = True
-      mock_settings.api_keys = ["valid-key"]
+      mock_settings.api_keys = "valid-key"
 
       # First request should succeed
       response1 = await auth_middleware.dispatch(
